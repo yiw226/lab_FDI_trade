@@ -16,3 +16,6 @@ the United Kingdom, Netherlands, Germany, and Switzerland became more prominent 
 while Hong Kong and Belgium dropped out of the top 10 and Taiwan entered the list. 
 Overall, the figure shows strong continuity in North American trade relationships, 
 but also a noticeable reordering among other major U.S. export markets.
+
+Note: For the purpose of this assignment, I only add a "Part 4" to the original code Professor Handley provide to us, please see 
+line 357 - 434 for the purpose of evaluating the code I wrote. 
