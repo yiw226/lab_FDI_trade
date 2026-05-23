@@ -354,6 +354,86 @@ ggplot(top10_data%>%filter(YEAR==yrplot),aes(group = CTY_NAME, y = rank)) +
   theme_minimal()
 
 
+## Part 4: Top 10 U.S. Export Destinations in 2015 and 2025 ----
+
+# Census International Trade API:
+# Exports by NAICS endpoint
+# ALL_VAL_YR = year-to-date total export value.
+# By using MONTH = "12", the year-to-date value becomes the full annual total.
+
+exports_cty_yr <- getCensus(
+  name = "timeseries/intltrade/exports/naics",
+  vars = c("ALL_VAL_YR", "YEAR", "CTY_CODE", "CTY_NAME"),
+  time = "from 2015",
+  MONTH = "12",
+  show_call = TRUE
+)
+
+head(exports_cty_yr)
+
+exports_cty_yr_clean <- exports_cty_yr %>%
+  filter(!(substr(CTY_CODE, 1, 1) == "0" |
+             substr(CTY_CODE, 2, 2) == "X" |
+             substr(CTY_CODE, 1, 1) == "-")) %>%
+  mutate(
+    ALL_VAL_YR = as.numeric(ALL_VAL_YR) / 1000000000,
+    YEAR = as.numeric(YEAR)
+  ) %>%
+  filter(YEAR %in% c(2015, 2025))
+
+top10_exports <- exports_cty_yr_clean %>%
+  group_by(YEAR) %>%
+  slice_max(order_by = ALL_VAL_YR, n = 10, with_ties = FALSE) %>%
+  arrange(YEAR, desc(ALL_VAL_YR)) %>%
+  mutate(
+    rank = row_number(),
+    label = paste0(CTY_NAME, " ($", round(ALL_VAL_YR, 1), "B)")
+  ) %>%
+  ungroup()
+
+print(top10_exports)
+
+max_x <- max(top10_exports$ALL_VAL_YR, na.rm = TRUE)
+
+export_top10_plot <- ggplot(top10_exports, aes(group = CTY_NAME, y = rank)) +
+  geom_tile(
+    aes(x = ALL_VAL_YR / 2,
+        width = ALL_VAL_YR,
+        height = 0.6,
+        fill = CTY_NAME),
+    show.legend = FALSE
+  ) +
+  geom_text(
+    aes(x = ALL_VAL_YR, label = label),
+    nudge_x = max_x * 0.03,
+    hjust = 0,
+    size = 3
+  ) +
+  scale_y_reverse(breaks = 1:10, minor_breaks = NULL) +
+  scale_x_continuous(
+    limits = c(0, max_x * 1.35),
+    labels = scales::dollar_format(suffix = "B")
+  ) +
+  facet_wrap(~ YEAR) +
+  labs(
+    x = "Export Value, Annual Total (billions USD)",
+    y = "Ranking by U.S. Exports",
+    title = "Top 10 Destinations for U.S. Exports: 2015 vs 2025",
+    caption = "Source: U.S. Census Bureau International Trade API, NAICS exports endpoint"
+  ) +
+  theme_minimal()
+
+export_top10_plot
+
+ggsave(
+  filename = "top10_US_export_destinations_2015_2025.png",
+  plot = export_top10_plot,
+  width = 12,
+  height = 7,
+  dpi = 300
+)
+
+
 ## Part 5: Animated plot by year ----
 
 
